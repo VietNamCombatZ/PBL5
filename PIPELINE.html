@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHuBERT ISLR Architecture</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg:        #f7f6f2;
+  --paper:     #ffffff;
+  --ink:       #1a1a1a;
+  --ink2:      #3d3d3d;
+  --ink3:      #6b6b6b;
+  --rule:      #d4cfc6;
+  --blue:      #1a4f8a;
+  --blue-lt:   #dce8f5;
+  --blue-mid:  #4b7cbf;
+  --green:     #1e6147;
+  --green-lt:  #d6ede3;
+  --purple:    #4a2880;
+  --purple-lt: #e8dff5;
+  --amber:     #7a4a00;
+  --amber-lt:  #fdefd0;
+  --gray-lt:   #f0ede8;
+  --gray-mid:  #e2ddd6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--ink);
+  padding: 36px 28px;
+  line-height: 1.5;
+}
+
+.page { max-width: 1100px; margin: 0 auto; }
+
+.header {
+  border-bottom: 2.5px solid var(--ink);
+  padding-bottom: 14px;
+  margin-bottom: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+}
+.header-left h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.header-left h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--ink2);
+  margin-top: 3px;
+}
+.header-right { text-align: right; flex-shrink: 0; }
+.header-right .ref { font-size: 11px; color: var(--ink3); font-family: 'JetBrains Mono', monospace; }
+.header-right .sec {
+  display: inline-block; margin-top: 4px;
+  background: var(--blue); color: #fff;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 2px;
+}
+
+.flow { display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+.step {
+  width: 100%;
+  border: 1.5px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.step-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; border-bottom: 1px solid var(--rule);
+}
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.step-title { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; flex: 1; }
+.step-body { padding: 10px 14px; }
+
+.connector {
+  display: flex; flex-direction: column; align-items: center;
+  height: 32px; position: relative;
+}
+.connector::before {
+  content: ''; position: absolute; left: 50%; top: 0;
+  width: 1.5px; height: 20px; background: #aaa7a0;
+}
+.connector::after {
+  content: '▾'; position: absolute; bottom: 0;
+  font-size: 14px; color: #aaa7a0; line-height: 1;
+}
+.connector-label {
+  position: absolute; left: calc(50% + 8px); top: 2px;
+  font-size: 10px; font-family: 'JetBrains Mono', monospace;
+  color: var(--ink3); white-space: nowrap;
+}
+
+.streams-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+.stream-card { border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+.stream-card-head {
+  padding: 5px 8px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--rule);
+}
+.stream-card-body { padding: 6px 8px; font-size: 10.5px; color: var(--ink2); line-height: 1.6; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.shape-tag {
+  display: inline-block; background: var(--gray-lt);
+  border: 1px solid var(--rule); border-radius: 2px;
+  padding: 1px 7px; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--ink2); margin-top: 4px;
+}
+
+.transformer-outer {
+  width: 100%; border: 2px solid var(--blue); border-radius: 4px;
+  background: var(--paper); overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.transformer-head {
+  background: var(--blue); padding: 8px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.transformer-head-title { font-size: 12px; font-weight: 700; color: #fff; letter-spacing: 0.04em; text-transform: uppercase; }
+.transformer-head-meta { font-size: 10px; color: #c5d9f5; font-family: 'JetBrains Mono', monospace; }
+.transformer-body { padding: 12px 14px; }
+
+.blocks-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-bottom: 10px; }
+.tblock { border: 1.5px solid var(--blue-mid); border-radius: 3px; background: var(--blue-lt); padding: 4px 2px; text-align: center; }
+.tblock-label { font-size: 9px; font-weight: 700; color: var(--blue); font-family: 'JetBrains Mono', monospace; }
+.tblock-sub { font-size: 7.5px; color: var(--blue-mid); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.lora-chip {
+  display: block; margin-top: 3px; background: var(--amber-lt);
+  border: 1px solid #c8860a; border-radius: 2px;
+  font-size: 7px; font-weight: 700; color: var(--amber);
+  padding: 1px 2px; letter-spacing: 0.04em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.lora-formula-box {
+  background: var(--amber-lt); border: 1.5px solid #c8860a; border-radius: 3px;
+  padding: 8px 14px; font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--amber); text-align: center;
+}
+.frozen-notice {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--blue-lt); border: 1px solid var(--blue-mid); border-radius: 3px;
+  padding: 5px 12px; font-size: 11px; color: var(--blue); font-weight: 600;
+  margin-bottom: 10px; width: fit-content;
+}
+
+.notice {
+  display: flex; align-items: center; gap: 8px;
+  border: 1.5px solid #c8860a; border-radius: 3px; background: var(--amber-lt);
+  padding: 6px 14px; font-size: 11px; color: var(--amber); font-weight: 600;
+  width: fit-content; margin: 0 auto;
+}
+
+.head-pipeline { display: flex; align-items: center; gap: 0; justify-content: center; }
+.head-box {
+  border: 1.5px solid var(--green); border-radius: 3px;
+  background: var(--green-lt); padding: 8px 14px; text-align: center; min-width: 120px;
+}
+.head-box-title { font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.04em; }
+.head-box-sub { font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #3d7a5a; margin-top: 3px; }
+.head-arrow { padding: 0 6px; font-size: 16px; color: var(--green); font-weight: 700; }
+
+.output-box {
+  background: var(--paper); border: 2px solid var(--ink);
+  border-radius: 4px; padding: 12px 20px; text-align: center; width: 100%;
+}
+.output-title { font-family: 'Source Serif 4', serif; font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.label-chips { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.label-chip {
+  background: var(--gray-lt); border: 1.5px solid var(--ink); border-radius: 3px;
+  padding: 3px 14px; font-size: 12px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace; color: var(--ink);
+}
+
+.rule { width: 100%; border: none; border-top: 1.5px solid var(--rule); margin: 24px 0; }
+
+.bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.panel { border: 1.5px solid var(--rule); border-radius: 4px; overflow: hidden; background: var(--paper); }
+.panel-head { padding: 7px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1.5px solid var(--rule); }
+.panel-body { padding: 8px 12px; }
+
+.t { width: 100%; border-collapse: collapse; font-size: 11px; }
+.t th { text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink3); padding: 3px 6px; border-bottom: 1px solid var(--rule); }
+.t td { padding: 4px 6px; border-bottom: 1px solid var(--gray-lt); font-family: 'JetBrains Mono', monospace; color: var(--ink2); font-size: 10.5px; }
+.t tr:last-child td { border-bottom: none; }
+.t td.key { color: var(--ink3); }
+.t td.val { color: var(--ink); font-weight: 600; }
+.t td.green { color: var(--green); font-weight: 700; }
+.t td.amber { color: var(--amber); font-weight: 700; }
+
+.gf-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--gray-lt); }
+.gf-row:last-child { border-bottom: none; }
+.gf-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+.gf-text { font-size: 11px; color: var(--ink2); line-height: 1.4; }
+.gf-text strong { color: var(--ink); }
+
+.tag { display: inline-block; border-radius: 2px; padding: 1px 7px; font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; }
+.tag-frozen { background: var(--blue-lt); color: var(--blue); border: 1px solid var(--blue-mid); }
+.tag-train  { background: var(--green-lt); color: var(--green); border: 1px solid #3a9a6a; }
+
+.concat-block {
+  background: var(--gray-lt); border: 1px solid var(--rule); border-radius: 3px;
+  padding: 8px 14px; font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; color: var(--ink2); line-height: 1.8;
+}
+.concat-block span.hi { color: var(--ink); font-weight: 600; }
+
+.footer { margin-top: 24px; border-top: 1px solid var(--rule); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+.footer-left { font-size: 10px; color: var(--ink3); font-family: 'JetBrains Mono', monospace; }
+.footer-right { font-size: 10px; color: var(--ink3); font-style: italic; font-family: 'Source Serif 4', serif; }
+
+  .footer-right { 
+    font-size: 10px; 
+    color: var(--ink3); 
+    font-style: italic; 
+    font-family: 'Source Serif 4', serif; 
+  }
+
+  /* ===== THÊM ĐOẠN NÀY Ở ĐÂY ===== */
+
+  @media print {
+
+    @page {
+      size: A3 landscape;
+      margin: 0;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    .flow,
+    .transformer-outer,
+    .bottom-grid {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  }
+
+
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div class="header-left">
+    <h1>SHuBERT — Fine-tuning Architecture for ISLR</h1>
+    <h2>Isolated Sign Language Recognition via LoRA Adaptation</h2>
+  </div>
+</div>
+
+<div class="flow">
+
+<!-- ① INPUT -->
+<div class="step">
+  <div class="step-header" style="background:var(--gray-lt)">
+    <div class="step-num" style="background:var(--ink);color:#fff">1</div>
+    <div class="step-title" style="color:var(--ink)">Input — Sign Language Video Frames</div>
+    <span class="tag" style="background:var(--gray-mid);color:var(--ink3);border:1px solid var(--rule)">Tensor [B, T, H, W, C]</span>
+  </div>
+  <div class="step-body" style="display:flex;gap:24px;align-items:center">
+    <span style="font-size:11.5px;color:var(--ink2)">Tensor shape: [B, T, H, W, C]</span>
+    <span class="mono" style="font-size:10.5px;color:var(--ink3)">avg fps ≈ 14.89</span>
+  </div>
+</div>
+
+<div class="connector"></div>
+
+<!-- ② MEDIAPIPE -->
+<div class="step">
+  <div class="step-header" style="background:var(--blue-lt)">
+    <div class="step-num" style="background:var(--blue);color:#fff">2</div>
+    <div class="step-title" style="color:var(--blue)">(a) MediaPipe — Landmark Extraction</div>
+    <span style="font-size:10px;color:var(--blue-mid);font-style:italic;font-weight:400;text-transform:none;letter-spacing:0">Per-frame · 3 parallel outputs</span>
+  </div>
+  <div class="step-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+
+    <!-- Hand -->
+    <div style="border:1.5px solid var(--blue-mid);border-radius:4px;overflow:hidden;">
+      <div style="background:var(--blue);padding:8px 12px;display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#fff;letter-spacing:0.05em;text-transform:uppercase;">Hand Landmarker</div>
+          <div style="font-size:9.5px;color:#c5d9f5;font-family:'JetBrains Mono',monospace;margin-top:1px;">L hand + R hand</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;background:#fff;">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--blue);font-weight:700;flex-shrink:0;margin-top:1px;">+ </span>
+            <span>Dilated bounding box crop, resize <strong style="color:var(--ink)">224×224</strong></span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--blue);font-weight:700;flex-shrink:0;margin-top:1px;">+</span>
+            <span>Inter-frame interpolation on detection miss</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--blue);font-weight:700;flex-shrink:0;margin-top:1px;">+</span>
+            <span>Both left &amp; right hand detected independently</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Face -->
+    <div style="border:1.5px solid #c8860a;border-radius:4px;overflow:hidden;">
+      <div style="background:var(--amber);padding:8px 12px;display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#fff;letter-spacing:0.05em;text-transform:uppercase;">Face Mesh</div>
+          <div style="font-size:9.5px;color:#fdefd0;font-family:'JetBrains Mono',monospace;margin-top:1px;">privacy-preserving</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;background:#fff;">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--amber);font-weight:700;flex-shrink:0;margin-top:1px;">+</span>
+            <span>Identify mouth &amp; eye ROIs via facial landmarks</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--amber);font-weight:700;flex-shrink:0;margin-top:1px;">+</span>
+            <span>Grey out all pixels <em>except</em> mouth &amp; eye regions</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--amber);font-weight:700;flex-shrink:0;margin-top:1px;">+</span>
+            <span>Gaussian blur + resize <strong style="color:var(--ink)">224×224</strong></span>
+          </div>
+        </div>
+        <div style="margin-top:8px;padding:4px 8px;background:var(--amber-lt);border-radius:3px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--amber);">Preserves non-manual markers</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body Pose -->
+    <div style="border:1.5px solid #7a5ab8;border-radius:4px;overflow:hidden;">
+      <div style="background:var(--purple);padding:8px 12px;display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="2"/><path d="M12 7v6"/><path d="M7 11l5 2 5-2"/><path d="M7 11l-1 5"/><path d="M17 11l1 5"/><path d="M6 16l1 2"/><path d="M18 16l-1 2"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#fff;letter-spacing:0.05em;text-transform:uppercase;">Upper Body Pose</div>
+          <div style="font-size:9.5px;color:#e8dff5;font-family:'JetBrains Mono',monospace;margin-top:1px;">7 keypoints</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;background:#fff;">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--purple);font-weight:700;flex-shrink:0;margin-top:1px;">+</span>
+            <span>Nose - L/R shoulders - L/R elbows - L/R wrists</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--purple);font-weight:700;flex-shrink:0;margin-top:1px;">+</span>
+            <span>Coordinates normalized to signing space</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--ink2);">
+            <span style="color:var(--purple);font-weight:700;flex-shrink:0;margin-top:1px;">+</span>
+            <span>Coarse spatial context (no DINOv2)</span>
+          </div>
+        </div>
+        <div style="margin-top:8px;padding:4px 8px;background:var(--purple-lt);border-radius:3px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--purple);">compact pose vector</span>
+          <span class="shape-tag" style="border-color:#7a5ab8;color:var(--purple);margin-top:0;">x_b ∈ ℝ¹⁴</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="connector"></div>
+
+<!-- ③ 4 STREAMS -->
+<div class="step">
+  <div class="step-header" style="background:var(--green-lt)">
+    <div class="step-num" style="background:var(--green);color:#fff">3</div>
+    <div class="step-title" style="color:var(--green)">(b) Multi-Stream Feature Extraction — 4 independent streams</div>
+    <span style="font-size:10px;color:var(--green);font-style:italic">DINOv2 ViT-S/14 backbone</span>
+  </div>
+  <div class="step-body">
+    <div class="streams-grid">
+      <div class="stream-card" style="border-color:#3a9a6a">
+        <div class="stream-card-head" style="background:var(--green-lt);color:var(--green)">Left Hand</div>
+        <div class="stream-card-body">+ Crop 224×224<br>+ DINOv2</span><br><span class="shape-tag" style="margin-top:4px">x_l ∈ ℝ³⁸⁴</span></div>
+      </div>
+      <div class="stream-card" style="border-color:#3a9a6a">
+        <div class="stream-card-head" style="background:var(--green-lt);color:var(--green)">Right Hand</div>
+        <div class="stream-card-body">+ Crop 224×224<br>+ DINOv2</span><br><span class="shape-tag" style="margin-top:4px">x_r ∈ ℝ³⁸⁴</span></div>
+      </div>
+      <div class="stream-card" style="border-color:#3a9a6a">
+        <div class="stream-card-head" style="background:var(--green-lt);color:var(--green)">Face (blurred)</div>
+        <div class="stream-card-body">+ Crop 224×224<br>+ DINOv2</span><br><span class="shape-tag" style="margin-top:4px">x_f ∈ ℝ³⁸⁴</span></div>
+      </div>
+      <div class="stream-card" style="border-color:#7a5ab8">
+        <div class="stream-card-head" style="background:var(--purple-lt);color:var(--purple)">Upper Body Pose</div>
+        <div class="stream-card-body">+ no DINOv2</span><br><span class="shape-tag" style="margin-top:4px;border-color:#7a5ab8;color:var(--purple)">x_b ∈ ℝ¹⁴</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="connector"></div>
+
+<!-- ④ PROJECTION -->
+<div class="step">
+  <div class="step-header" style="background:var(--gray-lt)">
+    <div class="step-num" style="background:var(--ink2);color:#fff">4</div>
+    <div class="step-title" style="color:var(--ink)">Per-stream LayerNorm + Linear Projection → Concatenation</div>
+    <span class="tag" style="background:var(--gray-mid);color:var(--ink3);border:1px solid var(--rule)">Output [B, T, 1024]</span>
+  </div>
+  <div class="step-body">
+    <div class="concat-block">
+      x_l → LayerNorm → Linear(384 → 256) → <span class="hi">256-d</span><br>
+      x_r → LayerNorm → Linear(384 → 256) → <span class="hi">256-d</span> &nbsp;&nbsp; <span style="color:var(--ink3)">── Concat ──▶</span> <span class="hi" style="font-size:12px">[B, T, 1024]</span><br>
+      x_f → LayerNorm → Linear(384 → 256) → <span class="hi">256-d</span><br>
+      x_b → LayerNorm → Linear( 14 → 256) → <span class="hi">256-d</span>
+    </div>
+  </div>
+</div>
+
+<div class="connector"></div>
+
+
+
+<!-- ⑤ TRANSFORMER -->
+<div class="transformer-outer">
+  <div class="transformer-head">
+    <div>
+      <div class="transformer-head-title">⑤ SHuBERT Transformer Encoder</div>
+      <div class="transformer-head-meta">12 blocks · d_model = 768 · heads = 12 · FFN = 3072 · 86 M total params</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <span class="tag tag-frozen">❄ FROZEN</span>
+      <span class="tag" style="background:var(--amber-lt);color:var(--amber);border:1px solid #c8860a;">🔥 LoRA rank-1 only</span>
+    </div>
+  </div>
+  <div class="transformer-body">
+    <div class="frozen-notice">❄ All original SHuBERT weights are frozen — gradients do NOT update W</div>
+    <div class="blocks-row">
+      <div class="tblock"><div class="tblock-label">Blk 1</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 2</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 3</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 4</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 5</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 6</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 7</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 8</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 9</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 10</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 11</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+      <div class="tblock"><div class="tblock-label">Blk 12</div><div class="tblock-sub">MHA+FFN</div><span class="lora-chip">LoRA r=1</span></div>
+    </div>
+    <div class="lora-formula-box">
+      W′ = W + α · (A · B) &nbsp;&nbsp;|&nbsp;&nbsp; A ∈ ℝ<sup>d×1</sup>, B ∈ ℝ<sup>1×d</sup> &nbsp;&nbsp;|&nbsp;&nbsp; trainable ≈ 170 K params ≈ 0.2% of 86 M
+    </div>
+  </div>
+</div>
+
+<div class="connector"><span class="connector-label">[B, T, 768]</span></div>
+
+<!-- ⑥ HEAD -->
+<div class="step">
+  <div class="step-header" style="background:var(--green-lt)">
+    <div class="step-num" style="background:var(--green);color:#fff">6</div>
+    <div class="step-title" style="color:var(--green)">Fine-tuning Head</div>
+    <span class="tag tag-train">🔥 Fully trainable</span>
+  </div>
+  <div class="step-body">
+    <div class="head-pipeline">
+      <div class="head-box">
+        <div class="head-box-title">Avg Pooling</div>
+        <div class="head-box-sub">[B,T,768]→[B,768]<br>mean over dim T</div>
+      </div>
+      <div class="head-arrow">→</div>
+      <div class="head-box">
+        <div class="head-box-title">Batch Norm</div>
+        <div class="head-box-sub">[B, 768]</div>
+      </div>
+      <div class="head-arrow">→</div>
+      <div class="head-box">
+        <div class="head-box-title">Linear</div>
+        <div class="head-box-sub">768 → N classes<br>label smooth=0.1</div>
+      </div>
+      <div class="head-arrow">→</div>
+      <div class="head-box">
+        <div class="head-box-title">Softmax</div>
+        <div class="head-box-sub">Cross-Entropy<br>Loss</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="connector"></div>
+
+<!-- ⑦ OUTPUT -->
+<div class="output-box">
+  <div class="output-title">⑦ Predicted Sign Label</div>
+  <div class="label-chips">
+    <span class="label-chip">"HELLO"</span>
+    <span class="label-chip">"THANK YOU"</span>
+    <span class="label-chip">"ME"</span>
+    <span class="label-chip">"SIGN"</span>
+    <span style="font-size:12px;color:var(--ink3);align-self:center;font-style:italic">… N classes total</span>
+  </div>
+</div>
+
+</div>
+
+<hr class="rule">
+
+<div class="bottom-grid">
+  <div class="panel">
+    <div class="panel-head" style="background:var(--blue-lt);color:var(--blue);border-color:var(--blue-mid)">Training Configuration</div>
+    <div class="panel-body">
+      <table class="t">
+        <tr><th>Parameter</th><th>Value</th></tr>
+        <tr><td class="key">optimizer</td><td class="val">Adam</td></tr>
+        <tr><td class="key">lr (head)</td><td class="green">1 × 10⁻⁴</td></tr>
+        <tr><td class="key">lr (LoRA)</td><td class="amber">1 × 10⁻⁵ &nbsp;(1/10 head)</td></tr>
+        <tr><td class="key">weight decay</td><td class="val">1 × 10⁻⁴</td></tr>
+        <tr><td class="key">label smoothing</td><td class="val">0.1</td></tr>
+        <tr><td class="key">batch size</td><td class="val">128</td></tr>
+        <tr><td class="key">epochs</td><td class="val">125</td></tr>
+        <tr><td class="key">early stop</td><td class="val">Rec@1 / P-I on val</td></tr>
+        <tr><td class="key">trainable params</td><td class="green">~170 K &nbsp;(0.2%)</td></tr>
+      </table>
+    </div>
+  </div>
+
+
+
+  <div class="panel">
+    <div class="panel-head" style="background:var(--green-lt);color:var(--green);border-color:#3a9a6a">Gradient Flow Summary</div>
+    <div class="panel-body">
+      <div class="gf-row">
+        <div class="gf-dot" style="background:var(--blue)"></div>
+        <div class="gf-text"><strong>SHuBERT weights (86M)</strong><br>❄ FROZEN — W is never updated</div>
+      </div>
+      <div class="gf-row">
+        <div class="gf-dot" style="background:#c8860a"></div>
+        <div class="gf-text"><strong>LoRA adapters A, B (~170K)</strong><br>🔥 TRAIN — W′ = W + α(AB)</div>
+      </div>
+      <div class="gf-row">
+        <div class="gf-dot" style="background:var(--green)"></div>
+        <div class="gf-text"><strong>Fine-tuning head (BN + Linear)</strong><br>🔥 TRAIN — full gradient update</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+</body>
+</html>
